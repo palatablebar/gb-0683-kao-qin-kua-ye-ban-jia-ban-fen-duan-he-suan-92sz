@@ -19,5 +19,14 @@ def api(stage):
 def page(stage,template):
     latest=store.history();state=store.get(latest[0]['id']) if latest else run(load('dirty.csv'),{})
     source=load(request.args['sample']) if 'sample' in request.args else base64.b64decode(state['source_b64']) if state.get('source_b64') else load('dirty.csv')
-    data=run(source,state.get('manifest',{}).get('parameters',{}),stage)
+    parameters=state.get('manifest',{}).get('parameters',{})
+    data=run(source,parameters,stage)
+    evidence={'times':data.get('times',{}),'correction_meta':data.get('correction_meta',{}),'corrections':data.get('corrections',[])}
+    if stage<3:
+        # M1/M2 show machine-stamped cards; the full run supplies the applied correction for comparison.
+        try:
+            full=run(source,parameters)
+            evidence={'times':full.get('times',{}),'correction_meta':full.get('correction_meta',{}),'corrections':full.get('corrections',[])}
+        except DomainError:pass
+    data['evidence']=evidence
     return render_template(template,title=TITLE,short=SHORT,modules=MODULES,current=stage,data=data,run=state,history=latest)

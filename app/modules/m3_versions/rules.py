@@ -3,6 +3,7 @@ from datetime import datetime,date,time,timedelta
 from zoneinfo import ZoneInfo
 from decimal import Decimal
 from app.errors import DomainError
+from app.modules.m3_versions.correction import apply as correct,annotate_shifts
 ZONE=ZoneInfo('Asia/Shanghai')
 
 def schedule(row):
@@ -18,6 +19,7 @@ def schedule(row):
     except (ValueError,TypeError):raise DomainError('RANGE','班次或休息区间无效')
 
 def apply(state):
+    correct(state)
     groups=defaultdict(list);bad=[]
     for r in state['rows']:
         try:
@@ -43,4 +45,4 @@ def apply(state):
         shifts.append({'id':employee+'/'+day,'employee':employee,'day':day,'in':selected.get('IN'),'out':selected.get('OUT'),'sources':rows})
     lines={r['_line'] for r,_ in bad};state['rows']=[r for r in state['rows'] if r['_line'] not in lines]
     for r,c in bad:state['quarantine'].append({'line':r['_line'],'id':r['id'],'code':c,'raw':r['_raw']})
-    state['shifts']=shifts;return state
+    state['shifts']=shifts;return annotate_shifts(state)

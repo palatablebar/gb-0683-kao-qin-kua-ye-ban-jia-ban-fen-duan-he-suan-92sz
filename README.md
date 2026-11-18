@@ -31,7 +31,9 @@ docker compose exec -T app pytest -q
 docker compose config --quiet
 ```
 
-原始样例在 `sample_data/`。测试在 `tests/`。封存文件是单份CSV，含运行清单、计算证据、隔离原因与对账。复核需提交当前版本，陈旧复核返回409。
+原始样例在 `sample_data/`（`clock.csv` 为打卡机快17分钟的校时样例）。测试在 `tests/`。封存文件是单份CSV，含运行清单、校时口径、维修单、逐卡校时证据、计算证据、隔离原因与对账。复核需提交当前版本，陈旧复核返回409。
+
+维修单校时：`POST /api/runs/<run_id>/corrections`，提交 `version`、`clock_tickets`、可选 `correction_policy`。默认按维修单修正全部受影响班次（班次级原子修正，未申诉员工同样修正）；`appeals` 口径仅修正申诉班次。切换成功版本+1并重新封存；同一维修单重跑返回 `NOOP`（409），不重复回拨；校验或事务失败保留旧版。页面顶部“重算工时”只校验重算结果与封存证据一致，不一致返回 409 且不改写。
 
 ## 数据与限制
 

@@ -13,6 +13,7 @@
 | M5 工时切段 | 查看并复算工时切段 | `/api/m5_calculate` | `app/modules/m5_calculate/rules.py` | `tests/test_calculate.py` |
 | M6 薪资对账 | 查看并复算薪资对账 | `/api/m6_reconcile` | `app/modules/m6_reconcile/compare.py` | `tests/test_reconcile.py` |
 | M7 周期归档 | 查看并复算周期归档 | `/api/m7_archive` | `app/modules/m7_archive/export_out.py` | `tests/test_archive.py` |
+| 维修单校时 | 按维修单修正受影响班次并切换 | `POST /api/runs/<id>/corrections` | `app/tickets.py`、`app/modules/m3_versions/correction.py`、`app/store.py` | `tests/test_correction.py`、`tests/test_switch.py` |
 
 ## 陷阱登记
 
@@ -31,6 +32,9 @@
 | TRAP-26 | 旧版本复核 | 覆盖新结论 | 事务条件更新 | `app/store.py` | `tests/test_archive.py::test_stale_review` |
 | TRAP-23 | 休息与跨夜端点 | 重复或漏计 | 半开区间切片 | `app/modules/m4_segments/rules.py` | `tests/test_segments.py::test_break_removed` |
 | TRAP-19 | 假日与周末重叠 | 费率相加 | 假日优先 | `app/modules/m5_calculate/rules.py` | `tests/test_calculate.py::test_holiday_overrides_rest` |
+| TRAP-31 | 维修单回拨只修申诉卡 | 同班进出半错半对 | 班次级原子修正，原始打卡留痕 | `app/modules/m3_versions/correction.py` | `tests/test_correction.py::test_both_policies_keep_in_out_pairs_together` |
+| TRAP-32 | 同单重跑去叠加偏移 | 二次回拨 | 从原始打卡重算+NOOP | `app/store.py` | `tests/test_switch.py::test_replay_same_ticket_is_noop_not_second_rollback` |
+| TRAP-33 | 切换失败写坏旧版 | 工资与封存证据错位 | 单事务切换，失败回滚 | `app/store.py` | `tests/test_switch.py::test_failed_transaction_rolls_back` |
 
 ## 对账规则
 

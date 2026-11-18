@@ -2,7 +2,7 @@ from datetime import datetime,timedelta
 from app.modules.m3_versions.rules import schedule,ZONE
 from app.errors import DomainError
 
-def split_shift(shift):
+def split_shift(shift,times=None):
     if shift['in'] is None or shift['out'] is None:raise DomainError('MISSING','班次缺少进出打卡')
     a=shift['in'];b=shift['out'];start=datetime.fromisoformat(a['at']).astimezone(ZONE);end=datetime.fromisoformat(b['at']).astimezone(ZONE)
     planned_start,planned_end,bs,be=schedule(a)
@@ -17,13 +17,15 @@ def split_shift(shift):
     points=sorted(boundaries);segments=[]
     for left,right in zip(points,points[1:]):
         if bs<=left<be:continue
-        segments.append({'id':shift['id'],'employee':shift['employee'],'shift_day':shift['day'],'calendar_day':left.date().isoformat(),'start':left.isoformat(),'end':right.isoformat(),'minutes':int((right-left).total_seconds()//60),'rate':str(a['hourly_rate']),'line':a['_line']})
+        evidence=(times or {}).get(a['id'],{})
+        segments.append({'id':shift['id'],'employee':shift['employee'],'shift_day':shift['day'],'calendar_day':left.date().isoformat(),'start':left.isoformat(),'end':right.isoformat(),'minutes':int((right-left).total_seconds()//60),'rate':str(a['hourly_rate']),'line':a['_line'],
+            'ticket':evidence.get('ticket'),'basis':evidence.get('basis'),'original_start':evidence.get('original_at'),'appealed':evidence.get('appealed')})
     return segments
 
 def apply(state):
     out=[];bad=set()
     for shift in state['shifts']:
-        try:out.extend(split_shift(shift))
+        try:out.extend(split_shift(shift,state.get('times')))
         except DomainError as e:
             for r in shift['sources']:bad.add(r['_line']);state['quarantine'].append({'line':r['_line'],'id':r['id'],'code':e.code,'raw':r['_raw']})
     state['rows']=[r for r in state['rows'] if r['_line'] not in bad];state['segments']=out;return state
